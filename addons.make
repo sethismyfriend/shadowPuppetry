@@ -2,3 +2,4 @@ ofxCv
 ofxOpenCv
 ofxXmlSettings
 ofxUI
+ofxPS3EyeGrabber
