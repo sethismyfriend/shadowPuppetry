@@ -144,9 +144,12 @@ void ofApp::setup()
     ofAddListener(gui1->newGUIEvent,this,&ofApp::guiEvent);
     
     //-----------Tracking Setup --------
+    //todo - create a gui to control the contour tracking. 
     contourFinder.setMinAreaRadius(15);
     contourFinder.setMaxAreaRadius(100);
-    contourFinder.setThreshold(150);
+    contourFinder.setThreshold(128);
+    contourFinder.setInvert(true);  //track dark objects
+    //contourFinder.setAutoThreshold(false);  //interesting to try
     // wait for half a frame before forgetting something
     contourFinder.getTracker().setPersistence(15);
     // an object can move up to 32 pixels per frame
