@@ -56,7 +56,6 @@ void ofApp::setup()
     vidGrabber.setAutoWhiteBalance(false);
     
     //-------HOMOGRAPHY SETUP ---------------------------
-    debugPS3 = false;
     fullScreen= false;
     movingPoint = false;
     saveMatrix = false;
@@ -116,8 +115,6 @@ void ofApp::setup()
         
     }
    
-    
-    
     //-------UI setup------------
     ofEnableSmoothing();
     ofSetCircleResolution(60);
@@ -139,10 +136,23 @@ void ofApp::setup()
     gui1->addSpacer();
     gui1->addToggle("  MIRROR FULLSCREEN", true);
     gui1->addToggle("  TOGGLE FULLSCREEN", false);
+    gui1->addToggle("  LOCK/UNLOCK POINTS", false); 
     gui1->addLabelButton("CLEAR HOMOGRAPHY", false);
     gui1->addLabelButton("SAVE HOMOGRAPHY", false);
     gui1->autoSizeToFitWidgets();
+    gui1->loadSettings("Homography_Settings.xml");
     ofAddListener(gui1->newGUIEvent,this,&ofApp::guiEvent);
+    
+    //-----------Tracking Setup --------
+    contourFinder.setMinAreaRadius(15);
+    contourFinder.setMaxAreaRadius(100);
+    contourFinder.setThreshold(150);
+    // wait for half a frame before forgetting something
+    contourFinder.getTracker().setPersistence(15);
+    // an object can move up to 32 pixels per frame
+    contourFinder.getTracker().setMaximumDistance(32);
+    showLabels = true;
+
     
 }
 
@@ -169,23 +179,24 @@ void ofApp::update()
         videoPix.setFromPixels(vidGrabber.getPixels(), camWidth, camHeight, OF_PIXELS_RGBA);
 	}
     
-    //homography---------------------
-    
-    if(leftPoints.size() >= 4) {
-        vector<Point2f> srcPoints, dstPoints;
-        for(int i = 0; i < leftPoints.size(); i++) {
-            srcPoints.push_back(Point2f(rightPoints[i].x - left.getWidth(), rightPoints[i].y));
-            dstPoints.push_back(Point2f(leftPoints[i].x, leftPoints[i].y));
-        }
-        
-        // generate a homography from the two sets of points
-        homography = findHomography(Mat(srcPoints), Mat(dstPoints));
-        homographyReady = true;
-        
-        if(saveMatrix) {
-            FileStorage fs(ofToDataPath("homography.yml"), FileStorage::WRITE);
-            fs << "homography" << homography;
-            saveMatrix = false;
+    //video homography---------------------
+    if(!lockHomography) {
+        if(leftPoints.size() >= 4) {
+            vector<Point2f> srcPoints, dstPoints;
+            for(int i = 0; i < leftPoints.size(); i++) {
+                srcPoints.push_back(Point2f(rightPoints[i].x - left.getWidth(), rightPoints[i].y));
+                dstPoints.push_back(Point2f(leftPoints[i].x, leftPoints[i].y));
+            }
+            
+            // generate a homography from the two sets of points
+            homography = findHomography(Mat(srcPoints), Mat(dstPoints));
+            homographyReady = true;
+            
+            if(saveMatrix) {
+                FileStorage fs(ofToDataPath("homography.yml"), FileStorage::WRITE);
+                fs << "homography" << homography;
+                saveMatrix = false;
+            }
         }
     }
     
@@ -200,6 +211,12 @@ void ofApp::update()
             if(mirrorLeft)warpedColor.mirror(false, true);
         }
     }
+    
+    //tracking--------------------------
+    
+    blur(warpedColor,5);
+    contourFinder.findContours(warpedColor);
+    
     
 }
 
@@ -249,11 +266,35 @@ void ofApp::draw()
         dir << "5) Toggle Fullscreen to perform. \n Try keyboard shortcuts (see left legend)." << std::endl;
         ofDrawBitmapStringHighlight(dir.str(), debugPos + ofPoint(200,0));
         
+        drawTracker();
+        
     }
     else {
         ss << "mode: fullscreen" << std::endl;
         warpedColor.draw(0, 0,ofGetWindowWidth(), ofGetWindowHeight());
     }
+    
+}
+
+void ofApp::drawTracker() {
+    
+    RectTracker& tracker = contourFinder.getTracker();
+    ofSetColor(255);
+    contourFinder.draw();
+    
+    for(int i = 0; i < contourFinder.size(); i++) {
+        ofPoint center = toOf(contourFinder.getCenter(i));
+        ofPushMatrix();
+        ofTranslate(center.x, center.y);
+        int label = contourFinder.getLabel(i);
+        string msg = ofToString(label) + ":" + ofToString(tracker.getAge(label));
+        ofDrawBitmapString(msg, 0, 0);
+        ofVec2f velocity = toOf(contourFinder.getVelocity(i));
+        ofScale(5, 5);
+        ofDrawLine(0, 0, velocity.x, velocity.y);
+        ofPopMatrix();
+    }
+
     
 }
 
@@ -279,6 +320,7 @@ void ofApp::guiEvent(ofxUIEventArgs &e)
     }
     else if (name == "SAVE HOMOGRAPHY") {
         saveMatrix = true;
+        gui1->saveSettings("Homography_Settings.xml");
     }
     else if (name == "  MIRROR FULLSCREEN") {
         ofxUIToggle *temp = (ofxUIToggle *) e.widget;
@@ -289,6 +331,10 @@ void ofApp::guiEvent(ofxUIEventArgs &e)
         ofxUIToggle *temp = (ofxUIToggle *) e.widget;
         fullScreen = temp->getValue();
         ofSetFullscreen(fullScreen);
+    }
+    else if (name == "  LOCK/UNLOCK POINTS") {
+        ofxUIToggle *temp = (ofxUIToggle *) e.widget;
+        lockHomography = temp->getValue();
     }
     
     else if (name == "EXPOSURE") {
@@ -355,16 +401,18 @@ bool ofApp::movePoint(vector<ofVec2f>& points, ofVec2f point, int LeftOrRight) {
 }
 
 void ofApp::mousePressed(int x, int y, int button) {
-    if((x < camWidth*2) && (y<camHeight)) {
-        ofVec2f cur(x, y);
-        ofVec2f rightOffset(left.getWidth(), 0);
-        if(!movePoint(leftPoints, cur, 0) && !movePoint(rightPoints, cur, 1)) {
-            if(x > left.getWidth()) {
-                cur -= rightOffset;
+    if(!lockHomography) {
+        if((x < camWidth*2) && (y<camHeight)) {
+            ofVec2f cur(x, y);
+            ofVec2f rightOffset(left.getWidth(), 0);
+            if(!movePoint(leftPoints, cur, 0) && !movePoint(rightPoints, cur, 1)) {
+                if(x > left.getWidth()) {
+                    cur -= rightOffset;
+                }
+                leftPoints.push_back(cur);
+                rightPoints.push_back(cur + rightOffset);
+                saveXMLPoints(cur);
             }
-            leftPoints.push_back(cur);
-            rightPoints.push_back(cur + rightOffset);
-            saveXMLPoints(cur);
         }
     }
 }
@@ -413,14 +461,14 @@ void ofApp::saveXMLPoints(ofVec2f cur) {
 
 //updates the value of the current point.
 void ofApp::mouseDragged(int x, int y, int button) {
-    if(movingPoint) {
+    if(movingPoint && !lockHomography) {
         curPoint->set(x, y);
     }
 }
 
 void ofApp::mouseReleased(int x, int y, int button) {
     //pushes released point into XML file
-    if(movingPoint) pushXMLPoint(ofVec2f(x,y),curPointIndex,curPointLeftOrRight);
+    if(movingPoint && !lockHomography ) pushXMLPoint(ofVec2f(x,y),curPointIndex,curPointLeftOrRight);
     movingPoint = false;
 }
 

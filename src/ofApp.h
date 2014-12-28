@@ -35,18 +35,18 @@
 class ofApp: public ofBaseApp
 {
 public:
+    
+    //-------standard functions
     void setup();
     void update();
     void draw();
-    void exit(); 
-    
-    //standard
+    void exit();
     void mousePressed(int x, int y, int button);
     void mouseDragged(int x, int y, int button);
     void mouseReleased(int x, int y, int button);
     void keyPressed(int key);
     
-    //homography
+    //---------homography functions
     bool movePoint(vector<ofVec2f>& points, ofVec2f point, int LeftOrRight);
     void drawPoints(vector<ofVec2f>& points);
     void updatePostions();
@@ -54,22 +54,28 @@ public:
     void saveXMLPoints(ofVec2f cur);
     void pushXMLPoint(ofVec2f point, int index, int LorR);
     
-    //added for ofxUI
+    //---------added for ofxUI functionality
     void mouseMoved(int x, int y );
     void windowResized(int w, int h);
     void dragEvent(ofDragInfo dragInfo);
     void gotMessage(ofMessage msg);
-    
     ofxUISuperCanvas *gui0; 
     ofxUISuperCanvas *gui1;
     void guiEvent(ofxUIEventArgs &e);
     
-    //---------------PS3
+    //---------General Parameters
+    bool                fullScreen;
+    
+    //----------PS3 Camera Control
     ofxPS3EyeGrabber vidGrabber;
     //ofTexture videoTexture;
     int camWidth;
     int camHeight;
     int camFrameRate;
+    ofPixels		 	videoPix;
+    ofImage             videoImg;
+    ofTexture			videoTexture;
+    ofTexture           warpedTexture;
     
     //------------Homography
     float sX, sY, ratio;
@@ -80,17 +86,15 @@ public:
     ofVec2f* curPoint;
     int curPointIndex, curPointLeftOrRight;
     bool saveMatrix;
-    bool homographyReady;
-    bool debugPS3;
+    bool homographyReady, lockHomography;
     ofxXmlSettings points;
-    
-    //ofVideoGrabber 		vidGrabber;   //using PS3 for speed of tracking.
-    ofPixels		 	videoPix;
-    ofImage             videoImg;
-    ofTexture			videoTexture;
-    ofTexture           warpedTexture;
-    bool                fullScreen;
     cv::Mat homography;
+    
+    //------------Tracking
+    void drawTracker(); 
+    ofxCv::ContourFinder contourFinder;
+    float threshold;
+    bool showLabels;
 
     
 
