@@ -61,7 +61,9 @@ public:
     void gotMessage(ofMessage msg);
     ofxUISuperCanvas *gui0; 
     ofxUISuperCanvas *gui1;
+    ofxUISuperCanvas *gui2;
     void guiEvent(ofxUIEventArgs &e);
+    int fiveFrames; 
     
     //---------General Parameters
     bool                fullScreen;
@@ -94,7 +96,7 @@ public:
     void drawTracker(); 
     ofxCv::ContourFinder contourFinder;
     float threshold;
-    bool showLabels;
+    bool showTracker;
 
     
 

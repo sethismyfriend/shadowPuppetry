@@ -114,11 +114,15 @@ void ofApp::setup()
         points.popTag();
         
     }
+    
+    //tracking settings set by GUI
+    showTracker = true;
    
     //-------UI setup------------
     ofEnableSmoothing();
     ofSetCircleResolution(60);
     debugPos = ofPoint(10,camHeight+15);
+    fiveFrames = 0;
     
     gui0 = new ofxUISuperCanvas("PS3 Camera");
     gui0->addSpacer();
@@ -129,8 +133,8 @@ void ofApp::setup()
     gui0->addMinimalSlider("SHARPNESS", 0, 255, 0.0);
     gui0->addLabelButton("SAVE SETTINGS", false);
     gui0->autoSizeToFitWidgets();
-    gui0->loadSettings("PS3_Settings.xml");
     ofAddListener(gui0->newGUIEvent,this,&ofApp::guiEvent);
+    
     
     gui1 = new ofxUISuperCanvas("Homography");
     gui1->addSpacer();
@@ -140,22 +144,22 @@ void ofApp::setup()
     gui1->addLabelButton("CLEAR HOMOGRAPHY", false);
     gui1->addLabelButton("SAVE HOMOGRAPHY", false);
     gui1->autoSizeToFitWidgets();
-    gui1->loadSettings("Homography_Settings.xml");
     ofAddListener(gui1->newGUIEvent,this,&ofApp::guiEvent);
     
-    //-----------Tracking Setup --------
-    //todo - create a gui to control the contour tracking. 
-    contourFinder.setMinAreaRadius(15);
-    contourFinder.setMaxAreaRadius(100);
-    contourFinder.setThreshold(128);
-    contourFinder.setInvert(true);  //track dark objects
-    //contourFinder.setAutoThreshold(false);  //interesting to try
-    // wait for half a frame before forgetting something
-    contourFinder.getTracker().setPersistence(15);
-    // an object can move up to 32 pixels per frame
-    contourFinder.getTracker().setMaximumDistance(32);
-    showLabels = true;
-
+    
+    gui2 = new ofxUISuperCanvas("Tracking");
+    gui2->addSpacer();
+    gui2->addToggle("SHOW/HIDE TRACKING", true);
+    gui2->addToggle("INVERT TRACKING", true);
+    gui2->addMinimalSlider("THRESHOLD", 0, 255, 128.0);
+    gui2->addMinimalSlider("MIN AREA RADIUS", 0, 200, 15.0);
+    gui2->addMinimalSlider("MAX AREA RADIUS", 0, 200, 100.0);
+    gui2->addMinimalSlider("PERSISTENCE", 0, 60, 15.0);
+    gui2->addMinimalSlider("MAX DISTANCE", 0, 250, 32.0);
+    gui2->addLabelButton("SAVE TRACKING", false);
+    gui2->autoSizeToFitWidgets();
+    ofAddListener(gui2->newGUIEvent,this,&ofApp::guiEvent);  //load settings triggers event updates
+    
     
 }
 
@@ -163,10 +167,12 @@ void ofApp::setup()
 void ofApp::updatePostions() {
     if(fullScreen) {
         gui0->setPosition(0,ofGetWindowHeight()-175);
-        gui1->setPosition(ofGetWindowWidth()-gui1->getGlobalCanvasWidth(),ofGetWindowHeight()-125);
+        gui1->setPosition(ofGetWindowWidth()-gui1->getGlobalCanvasWidth(),ofGetWindowHeight()-200);
+        gui2->setPosition(ofGetWindowWidth()-gui2->getGlobalCanvasWidth()-gui1->getGlobalCanvasWidth()-25,ofGetWindowHeight()-200);
     } else {
-        gui0->setPosition(camWidth, camHeight);
-        gui1->setPosition(gui0->getGlobalCanvasWidth()+camWidth+50,camHeight);
+        gui0->setPosition(gui0->getGlobalCanvasWidth()+camWidth+190,camHeight);
+        gui1->setPosition(camWidth-60, camHeight);
+        gui2->setPosition(gui2->getGlobalCanvasWidth()+camWidth-50,camHeight);
     }
 }
 
@@ -220,6 +226,12 @@ void ofApp::update()
     blur(warpedColor,5);
     contourFinder.findContours(warpedColor);
     
+    //having some strange behaviors while initializing - so I wait 2 seconds to apply previous settings
+    if(fiveFrames++ == 60) {
+        gui0->loadSettings("PS3_Settings.xml");
+        gui1->loadSettings("Homography_Settings.xml");
+        gui2->loadSettings("Tracking_Settings.xml");
+    }
     
 }
 
@@ -269,7 +281,7 @@ void ofApp::draw()
         dir << "5) Toggle Fullscreen to perform. \n Try keyboard shortcuts (see left legend)." << std::endl;
         ofDrawBitmapStringHighlight(dir.str(), debugPos + ofPoint(200,0));
         
-        drawTracker();
+        if(showTracker) drawTracker();
         
     }
     else {
@@ -318,6 +330,7 @@ void ofApp::guiEvent(ofxUIEventArgs &e)
     string name = e.widget->getName();
     int kind = e.widget->getKind();
     
+    //homography
     if(name == "CLEAR HOMOGRAPHY") {
         clearPoints();
     }
@@ -339,7 +352,7 @@ void ofApp::guiEvent(ofxUIEventArgs &e)
         ofxUIToggle *temp = (ofxUIToggle *) e.widget;
         lockHomography = temp->getValue();
     }
-    
+    //camera settings
     else if (name == "EXPOSURE") {
         ofxUISlider *temp = (ofxUISlider *) e.widget;
         float holdme = temp->getValue();
@@ -367,6 +380,43 @@ void ofApp::guiEvent(ofxUIEventArgs &e)
     }
     else if (name == "SAVE SETTINGS") {
         gui0->saveSettings("PS3_Settings.xml");
+    }
+    //tracking
+    else if (name == "SHOW/HIDE TRACKING") {
+        ofxUIToggle *temp = (ofxUIToggle *) e.widget;
+        showTracker = temp->getValue();
+    }
+    else if (name == "INVERT TRACKING") {
+        ofxUIToggle *temp = (ofxUIToggle *) e.widget;
+        contourFinder.setInvert(temp->getValue());
+    }
+    else if (name == "THRESHOLD") {
+        ofxUISlider *temp = (ofxUISlider *) e.widget;
+        float holdme = temp->getValue();
+        contourFinder.setThreshold(holdme);
+    }
+    else if (name == "MIN AREA RADIUS") {
+        ofxUISlider *temp = (ofxUISlider *) e.widget;
+        float holdme = temp->getValue();
+        contourFinder.setMinAreaRadius(holdme);
+    }
+    else if (name == "MAX AREA RADIUS") {
+        ofxUISlider *temp = (ofxUISlider *) e.widget;
+        float holdme = temp->getValue();
+        contourFinder.setMaxAreaRadius(holdme);
+    }
+    else if (name == "PERSISTENCE") {
+        ofxUISlider *temp = (ofxUISlider *) e.widget;
+        float holdme = temp->getValue();
+        contourFinder.getTracker().setPersistence(holdme);
+    }
+    else if (name == "MAX DISTANCE") {
+        ofxUISlider *temp = (ofxUISlider *) e.widget;
+        float holdme = temp->getValue();
+        contourFinder.getTracker().setMaximumDistance(holdme);
+    }
+    else if (name == "SAVE TRACKING") {
+        gui2->saveSettings("Tracking_Settings.xml");
     }
     
 }
