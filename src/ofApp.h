@@ -82,7 +82,7 @@ public:
     //------------Homography
     float sX, sY, ratio;
     ofPoint debugPos; 
-    ofImage left, right, warpedColor;
+    ofImage warpedColor;
     vector<ofVec2f> leftPoints, rightPoints;
     bool movingPoint, mirrorLeft, mirrorRight;
     ofVec2f* curPoint;

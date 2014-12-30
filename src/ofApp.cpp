@@ -76,8 +76,6 @@ void ofApp::setup()
     videoPix.allocate(camWidth,camHeight,OF_PIXELS_RGBA);
     videoTexture.allocate(videoPix);
     videoImg.allocate(camWidth, camHeight, OF_IMAGE_COLOR);
-    left.load("left.jpg");
-    right.load("right.jpg");
     warpedColor.allocate(camWidth, camHeight, OF_IMAGE_COLOR_ALPHA);
     
     // load the previous homography if it's available
@@ -193,7 +191,7 @@ void ofApp::update()
         if(leftPoints.size() >= 4) {
             vector<Point2f> srcPoints, dstPoints;
             for(int i = 0; i < leftPoints.size(); i++) {
-                srcPoints.push_back(Point2f(rightPoints[i].x - left.getWidth(), rightPoints[i].y));
+                srcPoints.push_back(Point2f(rightPoints[i].x - camWidth, rightPoints[i].y));
                 dstPoints.push_back(Point2f(leftPoints[i].x, leftPoints[i].y));
             }
             
@@ -457,9 +455,9 @@ void ofApp::mousePressed(int x, int y, int button) {
     if(!lockHomography) {
         if((x < camWidth*2) && (y<camHeight)) {
             ofVec2f cur(x, y);
-            ofVec2f rightOffset(left.getWidth(), 0);
+            ofVec2f rightOffset(camWidth, 0);
             if(!movePoint(leftPoints, cur, 0) && !movePoint(rightPoints, cur, 1)) {
-                if(x > left.getWidth()) {
+                if(x > camWidth) {
                     cur -= rightOffset;
                 }
                 leftPoints.push_back(cur);
@@ -485,7 +483,7 @@ void ofApp::pushXMLPoint(ofVec2f point, int index, int LorR) {
 //creates the initial XML structure for points on click
 void ofApp::saveXMLPoints(ofVec2f cur) {
     
-    ofVec2f rightOffset(left.getWidth(), 0);
+    ofVec2f rightOffset(camWidth, 0);
     //left
     if(!points.pushTag("leftPoints")) {
         points.addTag("leftPoints");
