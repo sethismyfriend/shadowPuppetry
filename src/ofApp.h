@@ -30,6 +30,7 @@
 #include "ofxPS3EyeGrabber.h"
 #include "ofxCv.h"
 #include "ofxUI.h"
+#include "ofxBox2d.h"
 
 
 class ofApp: public ofBaseApp

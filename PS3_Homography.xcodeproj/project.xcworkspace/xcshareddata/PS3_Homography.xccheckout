@@ -20,6 +20,8 @@
 		<string>https://github.com/sethismyfriend/ofxUI.git</string>
 		<key>82FE419070EB6AF29544F483A06E9015DB1F162B</key>
 		<string>github.com:sethismyfriend/shadowPuppetry.git</string>
+		<key>903165F9FDCB952EAE50578862E56DA722F43224</key>
+		<string>github.com:vanderlin/ofxBox2d.git</string>
 	</dict>
 	<key>IDESourceControlProjectPath</key>
 	<string>PS3_Homography.xcodeproj</string>
@@ -35,6 +37,8 @@
 		<string>../../../../../addons/ofxUI</string>
 		<key>82FE419070EB6AF29544F483A06E9015DB1F162B</key>
 		<string>../..</string>
+		<key>903165F9FDCB952EAE50578862E56DA722F43224</key>
+		<string>../../../../../addons/ofxBox2d</string>
 	</dict>
 	<key>IDESourceControlProjectURL</key>
 	<string>github.com:sethismyfriend/shadowPuppetry.git</string>
@@ -51,6 +55,14 @@
 			<string>2DE9C8846D9375EAACFABA8963120E8E7719BAF5</string>
 			<key>IDESourceControlWCCName</key>
 			<string>..</string>
+		</dict>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>903165F9FDCB952EAE50578862E56DA722F43224</string>
+			<key>IDESourceControlWCCName</key>
+			<string>ofxBox2d</string>
 		</dict>
 		<dict>
 			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
