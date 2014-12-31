@@ -37,7 +37,7 @@ class ofApp: public ofBaseApp
 {
 public:
     
-    //-------standard functions
+    //-------standard
     void setup();
     void update();
     void draw();
@@ -47,7 +47,7 @@ public:
     void mouseReleased(int x, int y, int button);
     void keyPressed(int key);
     
-    //---------homography functions
+    //---------homography
     bool movePoint(vector<ofVec2f>& points, ofVec2f point, int LeftOrRight);
     void drawPoints(vector<ofVec2f>& points);
     void updatePostions();
@@ -55,7 +55,7 @@ public:
     void saveXMLPoints(ofVec2f cur);
     void pushXMLPoint(ofVec2f point, int index, int LorR);
     
-    //---------added for ofxUI functionality
+    //--------- ofxUI
     void mouseMoved(int x, int y );
     void windowResized(int w, int h);
     void dragEvent(ofDragInfo dragInfo);
@@ -64,7 +64,7 @@ public:
     ofxUISuperCanvas *gui1;
     ofxUISuperCanvas *gui2;
     void guiEvent(ofxUIEventArgs &e);
-    int fiveFrames; 
+    int frameCount;
     
     //---------General Parameters
     bool                fullScreen;
@@ -98,6 +98,14 @@ public:
     ofxCv::ContourFinder contourFinder;
     float threshold;
     bool showTracker;
+    
+    //-------------Box2d
+    ofxBox2d                            box2d;
+    vector <shared_ptr<ofxBox2dCircle> >     circles;
+    vector <shared_ptr<ofxBox2dPolygon> >	polyShapes;
+    ofPolyline                          shape;
+    void createBox2DShape(ofPolyline &daShape);
+
 
     
 
