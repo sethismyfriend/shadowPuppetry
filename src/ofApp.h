@@ -65,6 +65,7 @@ public:
     ofxUISuperCanvas *gui2;
     void guiEvent(ofxUIEventArgs &e);
     int frameCount;
+    void refreshGUIs(); 
     
     //---------General Parameters
     bool                fullScreen;
@@ -105,7 +106,7 @@ public:
     vector <shared_ptr<ofxBox2dPolygon> >	polyShapes;
     ofPolyline                          shape;
     void createBox2DShape(ofPolyline &daShape);
-
+    vector<ofPoint> scalePolyShape(ofPolyline shapeIn, float xScale, float yScale);
 
     
 

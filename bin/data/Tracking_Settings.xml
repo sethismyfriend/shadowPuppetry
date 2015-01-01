@@ -2,8 +2,8 @@
     <Kind>40</Kind>
     <Name>OFX_UI_WIDGET_CANVAS</Name>
     <IsMinified>0</IsMinified>
-    <XPosition>801.000000000</XPosition>
-    <YPosition>480.000000000</YPosition>
+    <XPosition>210.000000000</XPosition>
+    <YPosition>420.000000000</YPosition>
 </Canvas>
 <Widget>
     <Kind>2</Kind>
@@ -18,17 +18,17 @@
 <Widget>
     <Kind>25</Kind>
     <Name>THRESHOLD</Name>
-    <Value>174.605911255</Value>
+    <Value>160.788177490</Value>
 </Widget>
 <Widget>
     <Kind>25</Kind>
     <Name>MIN AREA RADIUS</Name>
-    <Value>6.896551609</Value>
+    <Value>9.852216721</Value>
 </Widget>
 <Widget>
     <Kind>25</Kind>
     <Name>MAX AREA RADIUS</Name>
-    <Value>100.492607117</Value>
+    <Value>55.172412872</Value>
 </Widget>
 <Widget>
     <Kind>25</Kind>

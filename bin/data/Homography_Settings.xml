@@ -2,8 +2,8 @@
     <Kind>40</Kind>
     <Name>OFX_UI_WIDGET_CANVAS</Name>
     <IsMinified>0</IsMinified>
-    <XPosition>580.000000000</XPosition>
-    <YPosition>480.000000000</YPosition>
+    <XPosition>260.000000000</XPosition>
+    <YPosition>240.000000000</YPosition>
 </Canvas>
 <Widget>
     <Kind>2</Kind>
@@ -18,5 +18,5 @@
 <Widget>
     <Kind>2</Kind>
     <Name>  LOCK/UNLOCK POINTS</Name>
-    <Value>1</Value>
+    <Value>0</Value>
 </Widget>

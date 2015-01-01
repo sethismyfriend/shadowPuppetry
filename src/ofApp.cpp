@@ -28,17 +28,17 @@
 using namespace ofxCv;
 using namespace cv;
 
-//remove function bounding box
+//CALLING THIS TOO FREQUENTLY WILL SLOW FRAMERATE
 static bool shouldRemove(ofPtr<ofxBox2dBaseShape>shape) {
-    return !ofRectangle(0, -400, ofGetScreenWidth(), ofGetScreenHeight()+400).inside(shape.get()->getPosition());
+    return !ofRectangle(0, -400, ofGetWidth(), ofGetHeight()+400).inside(shape.get()->getPosition());
 }
 
 void ofApp::setup()
 {
     //-------CAMERA SETUP------------------------------
     ofSetVerticalSync(false);
-	camWidth = 640;
-	camHeight = 480;
+	camWidth = 320;
+	camHeight = 240;
     camFrameRate = 120;
 
     //list devices - seems to only detect PS3 cameras
@@ -75,7 +75,7 @@ void ofApp::setup()
     ratio = 0.5;
     
     //set initial window states.
-    ofSetWindowShape(camWidth*2, ofGetScreenHeight()-150);
+    ofSetWindowShape(camWidth*2+60, camHeight*3);
     ofSetWindowPosition(ofGetScreenWidth()/2-camWidth, 50);
     if(fullScreen) ofSetFullscreen(true);
     
@@ -154,9 +154,9 @@ void ofApp::setup()
     gui1->addToggle("  LOCK/UNLOCK POINTS", false); 
     gui1->addLabelButton("CLEAR HOMOGRAPHY", false);
     gui1->addLabelButton("SAVE HOMOGRAPHY", false);
+    gui1->addLabelButton("REFRESH GUIS", false);
     gui1->autoSizeToFitWidgets();
     ofAddListener(gui1->newGUIEvent,this,&ofApp::guiEvent);
-    
     
     gui2 = new ofxUISuperCanvas("Tracking");
     gui2->addSpacer();
@@ -171,6 +171,7 @@ void ofApp::setup()
     gui2->autoSizeToFitWidgets();
     ofAddListener(gui2->newGUIEvent,this,&ofApp::guiEvent);  //load settings triggers event updates
     
+    refreshGUIs();
     
 }
 
@@ -181,9 +182,9 @@ void ofApp::updatePostions() {
         gui1->setPosition(ofGetWindowWidth()-gui1->getGlobalCanvasWidth(),ofGetWindowHeight()-200);
         gui2->setPosition(ofGetWindowWidth()-gui2->getGlobalCanvasWidth()-gui1->getGlobalCanvasWidth()-25,ofGetWindowHeight()-200);
     } else {
-        gui0->setPosition(gui0->getGlobalCanvasWidth()+camWidth+190,camHeight);
-        gui1->setPosition(camWidth-60, camHeight);
-        gui2->setPosition(gui2->getGlobalCanvasWidth()+camWidth-50,camHeight);
+        gui0->setPosition(450,camHeight*1.75);
+        gui1->setPosition(0, camHeight*1.75);
+        gui2->setPosition(210,camHeight*1.75);
     }
 }
 
@@ -236,31 +237,30 @@ void ofApp::update()
     
     //-----------------tracking--------------------------
     
+    
     blur(warpedColor,5);
     contourFinder.findContours(warpedColor);
     
     //having some strange NaN behaviors while initializing
     frameCount++;
-    if((frameCount == 30) || (frameCount==60)){
-        gui0->loadSettings("PS3_Settings.xml");
-        gui1->loadSettings("Homography_Settings.xml");
-        gui2->loadSettings("Tracking_Settings.xml");
+    if((frameCount == 30)){
+        refreshGUIs();
     }
     
     //-----------------Box2D --------------------
     
     if(fullScreen) {
         // add some circles every so often
-        if((int)ofRandom(0, 10) == 0) {
+        if((int)ofRandom(0, 2) == 0) {
             shared_ptr<ofxBox2dCircle> circle = shared_ptr<ofxBox2dCircle>(new ofxBox2dCircle);
             circle.get()->setPhysics(0.3, 0.5, 0.1);
-            circle.get()->setup(box2d.getWorld(), (ofGetWidth()/2)+ofRandom(-20, 20), -20, ofRandom(10, 20));
+            circle.get()->setup(box2d.getWorld(), (ofGetWidth()/2)+ofRandom(-20, 20), -20, ofRandom(10, 50));
             circles.push_back(circle);
         }
         
         // remove shapes offscreen
         ofRemove(circles, shouldRemove);
-        ofRemove(polyShapes, shouldRemove);
+        //ofRemove(polyShapes, shouldRemove);
         
         polyShapes.clear();
         //RectTracker& tracker = contourFinder.getTracker();   //use to get labels
@@ -274,6 +274,13 @@ void ofApp::update()
     
 }
 
+void ofApp::refreshGUIs(){
+    gui0->loadSettings("PS3_Settings.xml");
+    gui1->loadSettings("Homography_Settings.xml");
+    gui2->loadSettings("Tracking_Settings.xml");
+}
+
+
 void ofApp::draw()
 {
     std::stringstream ss;
@@ -283,10 +290,11 @@ void ofApp::draw()
     
     ofShowCursor();
     
+    ss << "App FPS: " << ofGetFrameRate() << std::endl;
+    ss << "Cam FPS: " << vidGrabber.getFPS() << std::endl;
+    
     if(!fullScreen) {
-        
-        ss << "App FPS: " << ofGetFrameRate() << std::endl;
-        ss << "Cam FPS: " << vidGrabber.getFPS() << std::endl;
+        //lockHomography = false;
         ss << "mode: draw homography" << std::endl;
         videoTexture.draw(camWidth, 0, camWidth, camHeight);
         if(homographyReady) {
@@ -325,6 +333,8 @@ void ofApp::draw()
     }
     else {
         ss << "mode: fullscreen" << std::endl;
+        ss << "Total Bodies: " << ofToString(box2d.getBodyCount()) << "\n";
+        ss << "Total Joints: " << ofToString(box2d.getJointCount()) << "\n\n";
         warpedColor.draw(0, 0,ofGetWindowWidth(), ofGetWindowHeight());
         
         //------box2D stuff-------------------
@@ -342,6 +352,7 @@ void ofApp::draw()
             ofDrawCircle(polyShapes[i].get()->getPosition(), 3);
         }
         
+        ofDrawBitmapStringHighlight(ss.str(), ofPoint(ofGetScreenWidth()/2-200,ofGetScreenHeight()-200));
         
     }
     
@@ -378,18 +389,25 @@ void ofApp::drawPoints(vector<ofVec2f>& points) {
 
 //converts a contour into a box 2D shape
 void ofApp::createBox2DShape(ofPolyline &daShape) {
-    
-    
     daShape = daShape.getResampledByCount(b2_maxPolygonVertices);
     //daShape = getConvexHull(shape); //we don't need this because contourfinder returns a convex hull
     shared_ptr<ofxBox2dPolygon> poly = shared_ptr<ofxBox2dPolygon>(new ofxBox2dPolygon);
-    poly.get()->addVertices(daShape.getVertices());
+    poly.get()->addVertices(scalePolyShape(daShape, ofGetScreenWidth()/camWidth, ofGetScreenHeight()/camHeight));
     poly.get()->setPhysics(1.0, 0.3, 0.3);
     poly.get()->create(box2d.getWorld());
     polyShapes.push_back(poly);
     daShape.clear();
 }
 
+//helper function to scale points in fullscreen mode
+vector<ofPoint> ofApp::scalePolyShape(ofPolyline shapeIn, float xScale, float yScale) {
+    vector<ofPoint> pts = shapeIn.getVertices();
+    for(int i=0; i<pts.size(); i++) {
+        pts[i].x *= xScale;
+        pts[i].y *= yScale;
+    }
+    return pts;
+}
 
 
 //--------------------------------------------------------------
@@ -401,6 +419,9 @@ void ofApp::guiEvent(ofxUIEventArgs &e)
     //homography
     if(name == "CLEAR HOMOGRAPHY") {
         clearPoints();
+    }
+    else if(name == "REFRESH GUIS") {
+        refreshGUIs();
     }
     else if (name == "SAVE HOMOGRAPHY") {
         saveMatrix = true;
@@ -610,7 +631,9 @@ void ofApp::keyPressed(int key) {
     else if(key == 'f') {
         fullScreen = !fullScreen;
         ofToggleFullscreen();
-        
+        if(fullScreen) {
+            box2d.createGround(ofPoint(0,ofGetScreenHeight()-100), ofPoint(ofGetScreenWidth(), ofGetScreenHeight()-100));
+        }
     }
     //box2D clear
     else if(key == 'c') {
