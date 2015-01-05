@@ -1,6 +1,6 @@
 // =============================================================================
 //
-// Copyright (c) 2014 Christopher Baker <http://christopherbaker.net>
+// Copyright (c) 2014 Seth Hunter
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -100,7 +100,13 @@ public:
     float threshold;
     bool showTracker;
     
+    //-------------Projector Space
+    vector<ofPoint> projectorPoints;
+    bool  markProjectorBounds, drawProjectorBounds;
+    void drawProjectorRect(); 
+    
     //-------------Box2d
+    float xOffset; 
     ofxBox2d                            box2d;
     vector <shared_ptr<ofxBox2dCircle> >     circles;
     vector <shared_ptr<ofxBox2dPolygon> >	polyShapes;

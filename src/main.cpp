@@ -1,6 +1,6 @@
 // =============================================================================
 //
-// Copyright (c) 2014 Christopher Baker <http://christopherbaker.net>
+// Copyright (c) 2014 Seth Hunter
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,10 +24,15 @@
 
 
 #include "ofApp.h"
-
+#include "ofAppGLFWWindow.h"
 
 int main()
 {
-    ofSetupOpenGL(1920, 1080, OF_WINDOW);
+    
+    ofAppGLFWWindow window;
+    window.setMultiDisplayFullscreen(true);
+    ofSetupOpenGL(&window,2880+1024,768,OF_FULLSCREEN);
+    
+    //ofSetupOpenGL(1920, 1080, OF_WINDOW);
     ofRunApp(new ofApp());
 }

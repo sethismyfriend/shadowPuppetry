@@ -40,6 +40,7 @@ void ofApp::setup()
 	camWidth = 320;
 	camHeight = 240;
     camFrameRate = 120;
+    xOffset = 1440;
 
     //list devices - seems to only detect PS3 cameras
     std::vector<ofVideoDevice> devices = vidGrabber.listDevices();
@@ -68,6 +69,8 @@ void ofApp::setup()
     mirrorLeft = true;
     mirrorRight = true;
     showTracker = true;
+    markProjectorBounds = false;
+    drawProjectorBounds = true;
     
     //TODO: make position of homography relative.
     sX = 0;
@@ -75,8 +78,8 @@ void ofApp::setup()
     ratio = 0.5;
     
     //set initial window states.
-    ofSetWindowShape(camWidth*2+60, camHeight*3);
-    ofSetWindowPosition(ofGetScreenWidth()/2-camWidth, 50);
+   // ofSetWindowShape(camWidth*2+60, camHeight*3);
+    ofSetWindowPosition(0, 0);
     if(fullScreen) ofSetFullscreen(true);
     
     videoPix.allocate(camWidth,camHeight,OF_PIXELS_RGBA);
@@ -177,15 +180,15 @@ void ofApp::setup()
 
 
 void ofApp::updatePostions() {
-    if(fullScreen) {
-        gui0->setPosition(0,ofGetWindowHeight()-175);
-        gui1->setPosition(ofGetWindowWidth()-gui1->getGlobalCanvasWidth(),ofGetWindowHeight()-200);
-        gui2->setPosition(ofGetWindowWidth()-gui2->getGlobalCanvasWidth()-gui1->getGlobalCanvasWidth()-25,ofGetWindowHeight()-200);
-    } else {
+    //if(fullScreen) {
+    //    gui0->setPosition(0,ofGetWindowHeight()-175);
+    //    gui1->setPosition(ofGetWindowWidth()-gui1->getGlobalCanvasWidth(),ofGetWindowHeight()-200);
+    //    gui2->setPosition(ofGetWindowWidth()-gui2->getGlobalCanvasWidth()-gui1->getGlobalCanvasWidth()-25,ofGetWindowHeight()-200);
+    //} else {
         gui0->setPosition(450,camHeight*1.75);
         gui1->setPosition(0, camHeight*1.75);
         gui2->setPosition(210,camHeight*1.75);
-    }
+   //// }
 }
 
 
@@ -201,7 +204,7 @@ void ofApp::update()
 	}
     
     //-----------------video homography---------------------
-    if(fullScreen) lockHomography = true;
+   // if(fullScreen) lockHomography = true;
     
     if(!lockHomography) {
         if(leftPoints.size() >= 4) {
@@ -230,9 +233,9 @@ void ofApp::update()
         warpPerspective(videoPix, warpedColor, homography, CV_INTER_LINEAR);
         warpedColor.update();
         
-        if(fullScreen) {
+       // if(fullScreen) {
             if(mirrorLeft)warpedColor.mirror(false, true);
-        }
+       // }
     }
     
     //-----------------tracking--------------------------
@@ -249,12 +252,12 @@ void ofApp::update()
     
     //-----------------Box2D --------------------
     
-    if(fullScreen) {
+   // if(fullScreen) {
         // add some circles every so often
         if((int)ofRandom(0, 2) == 0) {
             shared_ptr<ofxBox2dCircle> circle = shared_ptr<ofxBox2dCircle>(new ofxBox2dCircle);
             circle.get()->setPhysics(0.3, 0.5, 0.1);
-            circle.get()->setup(box2d.getWorld(), (ofGetWidth()/2)+ofRandom(-20, 20), -20, ofRandom(10, 50));
+            circle.get()->setup(box2d.getWorld(), xOffset + ((ofGetWidth()-xOffset)/2) + ofRandom(-20, 20), -20, ofRandom(10, 50));
             circles.push_back(circle);
         }
         
@@ -270,7 +273,7 @@ void ofApp::update()
         }
         
         box2d.update();
-    }
+   // }
     
 }
 
@@ -284,7 +287,7 @@ void ofApp::refreshGUIs(){
 void ofApp::draw()
 {
     std::stringstream ss;
-    ofBackground(45);
+    ofBackground(0);
     ofSetColor(255);
     ofSetFrameRate(120);
     
@@ -293,9 +296,9 @@ void ofApp::draw()
     ss << "App FPS: " << ofGetFrameRate() << std::endl;
     ss << "Cam FPS: " << vidGrabber.getFPS() << std::endl;
     
-    if(!fullScreen) {
+    //if(!fullScreen) {
         //lockHomography = false;
-        ss << "mode: draw homography" << std::endl;
+       // ss << "mode: draw homography" << std::endl;
         videoTexture.draw(camWidth, 0, camWidth, camHeight);
         if(homographyReady) {
             warpedColor.draw(0, 0);
@@ -326,16 +329,15 @@ void ofApp::draw()
         dir << "3) Adjust the red points on the left by \n clicking and moving." << std::endl;
         dir << "4) Click 'Save Homography' to save to file." << std::endl;
         dir << "5) Toggle Fullscreen to perform. \n Try keyboard shortcuts (see left legend)." << std::endl;
-        ofDrawBitmapStringHighlight(dir.str(), debugPos + ofPoint(200,0));
-        
+    
         if(showTracker) drawTracker();
         
-    }
-    else {
-        ss << "mode: fullscreen" << std::endl;
+   // }
+    //else {
+     //   ss << "mode: fullscreen" << std::endl;
         ss << "Total Bodies: " << ofToString(box2d.getBodyCount()) << "\n";
         ss << "Total Joints: " << ofToString(box2d.getJointCount()) << "\n\n";
-        warpedColor.draw(0, 0,ofGetWindowWidth(), ofGetWindowHeight());
+        warpedColor.draw(xOffset, 0, 1024, 768);
         
         //------box2D stuff-------------------
         // circles
@@ -351,12 +353,25 @@ void ofApp::draw()
             polyShapes[i].get()->draw();
             ofDrawCircle(polyShapes[i].get()->getPosition(), 3);
         }
-        
+   
+        drawProjectorRect(); 
+    
+        ofDrawBitmapStringHighlight(dir.str(), debugPos + ofPoint(200,0));
         ofDrawBitmapStringHighlight(ss.str(), ofPoint(ofGetScreenWidth()/2-200,ofGetScreenHeight()-200));
         
-    }
+    //}
     
 }
+
+void ofApp::drawProjectorRect() {
+    if(drawProjectorBounds) {
+        ofPolyline projShape;
+        projShape.addVertices(projectorPoints);
+        ofSetColor(0, 0, 255);
+        projShape.draw();
+    }
+}
+
 
 void ofApp::drawTracker() {
     
@@ -543,19 +558,31 @@ bool ofApp::movePoint(vector<ofVec2f>& points, ofVec2f point, int LeftOrRight) {
 }
 
 void ofApp::mousePressed(int x, int y, int button) {
-    if(!lockHomography) {
-        if((x < camWidth*2) && (y<camHeight)) {
-            ofVec2f cur(x, y);
-            ofVec2f rightOffset(camWidth, 0);
-            if(!movePoint(leftPoints, cur, 0) && !movePoint(rightPoints, cur, 1)) {
-                if(x > camWidth) {
-                    cur -= rightOffset;
+    if(!markProjectorBounds) {
+        if(!lockHomography) {
+            if((x < camWidth*2) && (y<camHeight)) {
+                ofVec2f cur(x, y);
+                ofVec2f rightOffset(camWidth, 0);
+                if(!movePoint(leftPoints, cur, 0) && !movePoint(rightPoints, cur, 1)) {
+                    if(x > camWidth) {
+                        cur -= rightOffset;
+                    }
+                    leftPoints.push_back(cur);
+                    rightPoints.push_back(cur + rightOffset);
+                    saveXMLPoints(cur);
                 }
-                leftPoints.push_back(cur);
-                rightPoints.push_back(cur + rightOffset);
-                saveXMLPoints(cur);
             }
         }
+    } else {
+        //each click adds a point to the vector
+        projectorPoints.push_back(ofPoint(x,y));
+        if(projectorPoints.size() ==4) {
+            drawProjectorBounds=true;
+            markProjectorBounds=false;
+            ofPoint first = projectorPoints[0];
+            projectorPoints.push_back(first);
+        }
+        
     }
 }
 
@@ -630,7 +657,7 @@ void ofApp::keyPressed(int key) {
     //toggle fullscreen
     else if(key == 'f') {
         fullScreen = !fullScreen;
-        ofToggleFullscreen();
+        //ofToggleFullscreen();
         if(fullScreen) {
             box2d.createGround(ofPoint(0,ofGetScreenHeight()-100), ofPoint(ofGetScreenWidth(), ofGetScreenHeight()-100));
         }
@@ -642,11 +669,15 @@ void ofApp::keyPressed(int key) {
         circles.clear();
     }
     //box2d create circles
-    if(key == '1') {
+    else if(key == '1') {
         shared_ptr<ofxBox2dCircle> circle = shared_ptr<ofxBox2dCircle>(new ofxBox2dCircle);
         circle.get()->setPhysics(0.3, 0.5, 0.1);
         circle.get()->setup(box2d.getWorld(), mouseX, mouseY, ofRandom(10, 20));
         circles.push_back(circle);
+    }
+    else if(key == 'p') {
+        markProjectorBounds = !markProjectorBounds;
+        projectorPoints.clear();
     }
 }
 
