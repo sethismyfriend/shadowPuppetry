@@ -41,6 +41,9 @@ void ofApp::setup()
 	camHeight = 240;
     camFrameRate = 120;
     xOffset = 1440;
+    displayWidth = xOffset;
+    projectorWidth = 1024;
+    projectorHeight = 768; 
 
     //list devices - seems to only detect PS3 cameras
     std::vector<ofVideoDevice> devices = vidGrabber.listDevices();
@@ -71,6 +74,7 @@ void ofApp::setup()
     showTracker = true;
     markProjectorBounds = false;
     drawProjectorBounds = true;
+    applyProjectorHomography = false;
     
     //TODO: make position of homography relative.
     sX = 0;
@@ -86,6 +90,7 @@ void ofApp::setup()
     videoTexture.allocate(videoPix);
     videoImg.allocate(camWidth, camHeight, OF_IMAGE_COLOR);
     warpedColor.allocate(camWidth, camHeight, OF_IMAGE_COLOR_ALPHA);
+    projectorWarp.allocate(camWidth, camHeight, OF_IMAGE_COLOR_ALPHA);
     
     // load the previous homography if it's available
     ofFile previous("homography.yml");
@@ -233,6 +238,11 @@ void ofApp::update()
         warpPerspective(videoPix, warpedColor, homography, CV_INTER_LINEAR);
         warpedColor.update();
         
+        if(applyProjectorHomography) {
+            warpPerspective(warpedColor, projectorWarp, projectorHomography, CV_INTER_LINEAR);
+            projectorWarp.update();
+        }
+        
        // if(fullScreen) {
             if(mirrorLeft)warpedColor.mirror(false, true);
        // }
@@ -290,76 +300,71 @@ void ofApp::draw()
     ofBackground(0);
     ofSetColor(255);
     ofSetFrameRate(120);
-    
     ofShowCursor();
     
     ss << "App FPS: " << ofGetFrameRate() << std::endl;
     ss << "Cam FPS: " << vidGrabber.getFPS() << std::endl;
     
-    //if(!fullScreen) {
-        //lockHomography = false;
-       // ss << "mode: draw homography" << std::endl;
-        videoTexture.draw(camWidth, 0, camWidth, camHeight);
-        if(homographyReady) {
-            warpedColor.draw(0, 0);
-        } else {
-            videoTexture.draw(0,0);
-        }
-        
-        //drawing lines
-        ofSetColor(ofColor::red);
-        drawPoints(leftPoints);
-        ofSetColor(ofColor::blue);
-        drawPoints(rightPoints);
-        ofSetColor(128);
-        for(int i = 0; i < leftPoints.size(); i++) {
-            ofDrawLine(leftPoints[i], rightPoints[i]);
-        }
-        
-        ofSetColor(255);
-        ofDrawBitmapString(ofToString((int) ofGetFrameRate()), 10, 20);
-        //draw debug top left
-        ss << "\nkeyboard shortcuts:\n s=save-homography \n f=toggle-fullscreen \n g=toggle-GUIs" << std::endl;
-        ofDrawBitmapStringHighlight(ss.str(), debugPos);
-        
-        std::stringstream dir;
-        dir << "Directions:" << std::endl;
-        dir << "1) Use the PS3 Camera GUI to adjust your \n video image. Click 'save settings'." << std::endl;
-        dir << "2) Click 4 points on the right image to \n mark the corners of your screen." << std::endl;
-        dir << "3) Adjust the red points on the left by \n clicking and moving." << std::endl;
-        dir << "4) Click 'Save Homography' to save to file." << std::endl;
-        dir << "5) Toggle Fullscreen to perform. \n Try keyboard shortcuts (see left legend)." << std::endl;
+    videoTexture.draw(camWidth, 0, camWidth, camHeight);
+    if(homographyReady) {
+        warpedColor.draw(0, 0);
+    } else {
+        videoTexture.draw(0,0);
+    }
     
-        if(showTracker) drawTracker();
-        
-   // }
-    //else {
-     //   ss << "mode: fullscreen" << std::endl;
-        ss << "Total Bodies: " << ofToString(box2d.getBodyCount()) << "\n";
-        ss << "Total Joints: " << ofToString(box2d.getJointCount()) << "\n\n";
-        warpedColor.draw(xOffset, 0, 1024, 768);
-        
-        //------box2D stuff-------------------
-        // circles
-        for (int i=0; i<circles.size(); i++) {
-            ofFill();
-            ofSetHexColor(0xc0dd3b);
-            circles[i].get()->draw();
-        }
-        //polyshapes
-        ofSetHexColor(0x444342);
-        ofNoFill();
-        for (int i=0; i<polyShapes.size(); i++) {
-            polyShapes[i].get()->draw();
-            ofDrawCircle(polyShapes[i].get()->getPosition(), 3);
-        }
-   
-        drawProjectorRect(); 
+    //drawing lines
+    ofSetColor(ofColor::red);
+    drawPoints(leftPoints);
+    ofSetColor(ofColor::blue);
+    drawPoints(rightPoints);
+    ofSetColor(128);
+    for(int i = 0; i < leftPoints.size(); i++) {
+        ofDrawLine(leftPoints[i], rightPoints[i]);
+    }
     
-        ofDrawBitmapStringHighlight(dir.str(), debugPos + ofPoint(200,0));
-        ofDrawBitmapStringHighlight(ss.str(), ofPoint(ofGetScreenWidth()/2-200,ofGetScreenHeight()-200));
-        
-    //}
+    ofSetColor(255);
+    ofDrawBitmapString(ofToString((int) ofGetFrameRate()), 10, 20);
+    ss << "\nkeyboard shortcuts:\n s=save-homography \n f=toggle-fullscreen \n g=toggle-GUIs" << std::endl;
+    ofDrawBitmapStringHighlight(ss.str(), debugPos);
+    
+    std::stringstream dir;
+    dir << "Directions:" << std::endl;
+    dir << "1) Use the PS3 Camera GUI to adjust your \n video image. Click 'save settings'." << std::endl;
+    dir << "2) Click 4 points on the right image to \n mark the corners of your screen." << std::endl;
+    dir << "3) Adjust the red points on the left by \n clicking and moving." << std::endl;
+    dir << "4) Click 'Save Homography' to save to file." << std::endl;
+    dir << "5) Toggle Fullscreen to perform. \n Try keyboard shortcuts (see left legend)." << std::endl;
+
+    if(showTracker) drawTracker();
+    
+    ss << "Total Bodies: " << ofToString(box2d.getBodyCount()) << "\n";
+    ss << "Total Joints: " << ofToString(box2d.getJointCount()) << "\n\n";
+    
+    //after clicking 4 points in p mode this image should appear corrected. 
+    if(applyProjectorHomography) projectorWarp.draw(xOffset, 0, projectorWidth, projectorHeight);
+    else warpedColor.draw(xOffset, 0, 1024, 768);
+
+    //------box2D stuff-------------------
+    // circles
+    for (int i=0; i<circles.size(); i++) {
+        ofFill();
+        ofSetHexColor(0xc0dd3b);
+        circles[i].get()->draw();
+    }
+    //polyshapes
+    ofSetHexColor(0x444342);
+    ofNoFill();
+    for (int i=0; i<polyShapes.size(); i++) {
+        polyShapes[i].get()->draw();
+        ofDrawCircle(polyShapes[i].get()->getPosition(), 3);
+    }
+
+    drawProjectorRect(); 
+
+    ofDrawBitmapStringHighlight(dir.str(), debugPos + ofPoint(200,0));
+    ofDrawBitmapStringHighlight(ss.str(), ofPoint(ofGetScreenWidth()/2-200,ofGetScreenHeight()-200));
+    
+  
     
 }
 
@@ -579,6 +584,22 @@ void ofApp::mousePressed(int x, int y, int button) {
         if(projectorPoints.size() ==4) {
             drawProjectorBounds=true;
             markProjectorBounds=false;
+           
+            //find the projector homography once
+            float ratio = projectorWidth/camWidth;
+            vector<ofVec2f> srcPoints;
+            vector<ofVec2f> dstPoints;
+            for(int i=0; i<projectorPoints.size(); i++){
+                //shift and scale points
+                dstPoints.push_back(ofVec2f((projectorPoints[i].x-displayWidth)*ratio, projectorPoints[i].y*ratio));
+            }
+            srcPoints.push_back(ofVec2f(0.0, 0.0));
+            srcPoints.push_back(ofVec2f(camWidth, 0.0));
+            srcPoints.push_back(ofVec2f(camWidth, camHeight));
+            srcPoints.push_back(ofVec2f(0.0, camHeight));
+            projectorHomography = findHomography(Mat(srcPoints), Mat(dstPoints));
+            
+            //add a 5th point to draw the complete outline.
             ofPoint first = projectorPoints[0];
             projectorPoints.push_back(first);
         }
@@ -677,6 +698,7 @@ void ofApp::keyPressed(int key) {
     }
     else if(key == 'p') {
         markProjectorBounds = !markProjectorBounds;
+        applyProjectorHomography = false;
         projectorPoints.clear();
     }
 }

@@ -101,9 +101,13 @@ public:
     bool showTracker;
     
     //-------------Projector Space
+    float projectorWidth, projectorHeight;
+    float displayWidth; 
     vector<ofPoint> projectorPoints;
-    bool  markProjectorBounds, drawProjectorBounds;
-    void drawProjectorRect(); 
+    bool  markProjectorBounds, drawProjectorBounds, applyProjectorHomography;
+    void drawProjectorRect();
+    cv::Mat projectorHomography;
+    ofImage projectorWarp; 
     
     //-------------Box2d
     float xOffset; 
