@@ -8,7 +8,7 @@
 <Widget>
     <Kind>25</Kind>
     <Name>EXPOSURE</Name>
-    <Value>67.832511902</Value>
+    <Value>103.004928589</Value>
 </Widget>
 <Widget>
     <Kind>25</Kind>
@@ -18,7 +18,7 @@
 <Widget>
     <Kind>25</Kind>
     <Name>GAIN</Name>
-    <Value>19.241380692</Value>
+    <Value>20.793102264</Value>
 </Widget>
 <Widget>
     <Kind>25</Kind>
@@ -28,5 +28,5 @@
 <Widget>
     <Kind>25</Kind>
     <Name>SHARPNESS</Name>
-    <Value>20.098522186</Value>
+    <Value>57.783252716</Value>
 </Widget>

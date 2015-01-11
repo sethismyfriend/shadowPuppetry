@@ -116,7 +116,7 @@ public:
     vector <shared_ptr<ofxBox2dPolygon> >	polyShapes;
     ofPolyline                          shape;
     void createBox2DShape(ofPolyline &daShape);
-    vector<ofPoint> scalePolyShape(ofPolyline shapeIn, float xScale, float yScale);
+    vector<ofPoint> scalePolyShape(ofPolyline shapeIn);
 
     
 

@@ -69,7 +69,7 @@ void ofApp::setup()
     movingPoint = false;
     saveMatrix = false;
     homographyReady = false;
-    mirrorLeft = true;
+    mirrorLeft = false;
     mirrorRight = true;
     showTracker = true;
     markProjectorBounds = false;
@@ -98,6 +98,14 @@ void ofApp::setup()
         FileStorage fs(ofToDataPath("homography.yml"), FileStorage::READ);
         fs["homography"] >> homography;
         homographyReady = true;
+    }
+    
+    // load the previous homography if it's available
+    ofFile prevProj("homographyProjector.yml");
+    if(prevProj.exists()) {
+        FileStorage fs2(ofToDataPath("homographyProjector.yml"), FileStorage::READ);
+        fs2["homographyProjector"] >> projectorHomography;
+        applyProjectorHomography = true;
     }
     
     //load the previous draw points if available
@@ -250,7 +258,7 @@ void ofApp::update()
     
     //having some strange NaN behaviors while initializing
     frameCount++;
-    if((frameCount == 30)){
+    if(frameCount == 30){
         refreshGUIs();
     }
     
@@ -258,7 +266,7 @@ void ofApp::update()
     
    // if(fullScreen) {
         // add some circles every so often
-        if((int)ofRandom(0, 2) == 0) {
+        if((int)ofRandom(0, 20) == 0) {
             shared_ptr<ofxBox2dCircle> circle = shared_ptr<ofxBox2dCircle>(new ofxBox2dCircle);
             circle.get()->setPhysics(0.3, 0.5, 0.1);
             circle.get()->setup(box2d.getWorld(), xOffset + ((ofGetWidth()-xOffset)/2) + ofRandom(-20, 20), -20, ofRandom(10, 50));
@@ -335,8 +343,8 @@ void ofApp::draw()
     ss << "Total Joints: " << ofToString(box2d.getJointCount()) << "\n\n";
     
     //after clicking 4 points in p mode this image should appear corrected.
-    if(applyProjectorHomography) projectorWarp.draw(xOffset, 0, projectorWidth, projectorHeight);
-    else warpedColor.draw(xOffset, 0, 1024, 768);
+    //if(applyProjectorHomography) projectorWarp.draw(xOffset, 0, projectorWidth, projectorHeight);
+    //else warpedColor.draw(xOffset, 0, 1024, 768);
 
     //------box2D stuff-------------------
     // circles
@@ -404,7 +412,7 @@ void ofApp::createBox2DShape(ofPolyline &daShape) {
     daShape = daShape.getResampledByCount(b2_maxPolygonVertices);
     //daShape = getConvexHull(shape); //we don't need this because contourfinder returns a convex hull
     shared_ptr<ofxBox2dPolygon> poly = shared_ptr<ofxBox2dPolygon>(new ofxBox2dPolygon);
-    poly.get()->addVertices(scalePolyShape(daShape, ofGetScreenWidth()/camWidth, ofGetScreenHeight()/camHeight));
+    poly.get()->addVertices(scalePolyShape(daShape));
     poly.get()->setPhysics(1.0, 0.3, 0.3);
     poly.get()->create(box2d.getWorld());
     polyShapes.push_back(poly);
@@ -412,11 +420,42 @@ void ofApp::createBox2DShape(ofPolyline &daShape) {
 }
 
 //helper function to scale points in fullscreen mode
-vector<ofPoint> ofApp::scalePolyShape(ofPolyline shapeIn, float xScale, float yScale) {
+vector<ofPoint> ofApp::scalePolyShape(ofPolyline shapeIn) {
+    float xScale, yScale; 
+    xScale = ofGetScreenWidth()/camWidth;
+    yScale = ofGetScreenHeight()/camHeight;
     vector<ofPoint> pts = shapeIn.getVertices();
-    for(int i=0; i<pts.size(); i++) {
-        pts[i].x *= xScale;
-        pts[i].y *= yScale;
+    
+    //THEORY:
+    //use the homography to translate the points from 0,320 to the new homography coordinates.
+    //then scale the points to the projector size
+    //then translate the points by the projectorPoints[0] point the top left origin
+    if(applyProjectorHomography) {
+        xScale = projectorWidth/camWidth;
+        yScale = projectorHeight/camHeight;
+        //translate point values between homography
+        std::vector<Point2f> ptsIn(pts.size());
+        std::vector<Point2f> ptsOut(pts.size());
+        for(int i=0; i<pts.size(); i++) {
+            ptsIn[i] = Point2f(pts[i].x,pts[i].y);
+        }
+        cv::perspectiveTransform(ptsIn, ptsOut, projectorHomography);
+        for(int i=0; i<pts.size(); i++) {
+            //copy points back in
+            pts[i].x = ptsOut[i].x;
+            pts[i].y = ptsOut[i].y;
+            //scale points to projector
+            pts[i].x *= xScale;
+            pts[i].y *= yScale;
+            //shift points by projector offset
+            pts[i].x += displayWidth;
+        }
+        
+    } else {
+        for(int i=0; i<pts.size(); i++) {
+            pts[i].x *= xScale;
+            pts[i].y *= yScale;
+        }
     }
     return pts;
 }
@@ -576,6 +615,9 @@ void ofApp::mousePressed(int x, int y, int button) {
         if(projectorPoints.size() ==4) {
             drawProjectorBounds=true;
             markProjectorBounds=false;
+            
+            //reset the box2d world.
+            box2d.createGround(ofPoint(projectorPoints[3].x,projectorPoints[3].y), ofPoint(projectorPoints[2].x, projectorPoints[2].y));
            
             //find the projector homography once
             float ratio = camWidth/projectorWidth;
@@ -586,10 +628,15 @@ void ofApp::mousePressed(int x, int y, int button) {
                 dstPoints.push_back(Point2f((projectorPoints[i].x-displayWidth)*ratio, projectorPoints[i].y*ratio));
             }
             srcPoints.push_back(Point2f(0.0, 0.0));
-            srcPoints.push_back(Point2f(camWidth, 0.0));
-            srcPoints.push_back(Point2f(camWidth, camHeight));
-            srcPoints.push_back(Point2f(0.0, camHeight));
+            srcPoints.push_back(Point2f((float)camWidth, 0.0));
+            srcPoints.push_back(Point2f((float)camWidth, (float)camHeight));
+            srcPoints.push_back(Point2f(0.0, (float)camHeight));
             projectorHomography = findHomography(Mat(srcPoints), Mat(dstPoints));
+            applyProjectorHomography = true;   //might be nice to make sure it calculated correctly.
+            
+            //TODO: fix saving - not loading or saving correctly.
+            //FileStorage fs(ofToDataPath("homographyProjector.yml"), FileStorage::WRITE);
+            //fs << "homographyProjector" << homography;
             
             //add a 5th point to draw the complete outline.
             ofPoint first = projectorPoints[0];
@@ -669,11 +716,8 @@ void ofApp::keyPressed(int key) {
     }
     //toggle fullscreen
     else if(key == 'f') {
-        fullScreen = !fullScreen;
+        //fullScreen = !fullScreen;
         //ofToggleFullscreen();
-        if(fullScreen) {
-            box2d.createGround(ofPoint(0,ofGetScreenHeight()-100), ofPoint(ofGetScreenWidth(), ofGetScreenHeight()-100));
-        }
     }
     //box2D clear
     else if(key == 'c') {
