@@ -185,15 +185,9 @@ void ofApp::setup()
 
 
 void ofApp::updatePostions() {
-    //if(fullScreen) {
-    //    gui0->setPosition(0,ofGetWindowHeight()-175);
-    //    gui1->setPosition(ofGetWindowWidth()-gui1->getGlobalCanvasWidth(),ofGetWindowHeight()-200);
-    //    gui2->setPosition(ofGetWindowWidth()-gui2->getGlobalCanvasWidth()-gui1->getGlobalCanvasWidth()-25,ofGetWindowHeight()-200);
-    //} else {
         gui0->setPosition(450,camHeight*1.75);
         gui1->setPosition(0, camHeight*1.75);
         gui2->setPosition(210,camHeight*1.75);
-   //// }
 }
 
 
@@ -340,7 +334,7 @@ void ofApp::draw()
     ss << "Total Bodies: " << ofToString(box2d.getBodyCount()) << "\n";
     ss << "Total Joints: " << ofToString(box2d.getJointCount()) << "\n\n";
     
-    //after clicking 4 points in p mode this image should appear corrected. 
+    //after clicking 4 points in p mode this image should appear corrected.
     if(applyProjectorHomography) projectorWarp.draw(xOffset, 0, projectorWidth, projectorHeight);
     else warpedColor.draw(xOffset, 0, 1024, 768);
 
@@ -363,8 +357,6 @@ void ofApp::draw()
 
     ofDrawBitmapStringHighlight(dir.str(), debugPos + ofPoint(200,0));
     ofDrawBitmapStringHighlight(ss.str(), ofPoint(ofGetScreenWidth()/2-200,ofGetScreenHeight()-200));
-    
-  
     
 }
 
@@ -586,17 +578,17 @@ void ofApp::mousePressed(int x, int y, int button) {
             markProjectorBounds=false;
            
             //find the projector homography once
-            float ratio = projectorWidth/camWidth;
-            vector<ofVec2f> srcPoints;
-            vector<ofVec2f> dstPoints;
+            float ratio = camWidth/projectorWidth;
+            vector<Point2f> srcPoints;
+            vector<Point2f> dstPoints;
             for(int i=0; i<projectorPoints.size(); i++){
                 //shift and scale points
-                dstPoints.push_back(ofVec2f((projectorPoints[i].x-displayWidth)*ratio, projectorPoints[i].y*ratio));
+                dstPoints.push_back(Point2f((projectorPoints[i].x-displayWidth)*ratio, projectorPoints[i].y*ratio));
             }
-            srcPoints.push_back(ofVec2f(0.0, 0.0));
-            srcPoints.push_back(ofVec2f(camWidth, 0.0));
-            srcPoints.push_back(ofVec2f(camWidth, camHeight));
-            srcPoints.push_back(ofVec2f(0.0, camHeight));
+            srcPoints.push_back(Point2f(0.0, 0.0));
+            srcPoints.push_back(Point2f(camWidth, 0.0));
+            srcPoints.push_back(Point2f(camWidth, camHeight));
+            srcPoints.push_back(Point2f(0.0, camHeight));
             projectorHomography = findHomography(Mat(srcPoints), Mat(dstPoints));
             
             //add a 5th point to draw the complete outline.
