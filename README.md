@@ -17,4 +17,4 @@ Built to work with the current version of the [OF master](https://github.com/ope
 
 Here is a video showing the state as of commit 13:
 
-<iframe src="//player.vimeo.com/video/116622619" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe> <p><a href="http://vimeo.com/116622619">VID_20150110_190028.mp4</a> from <a href="http://vimeo.com/user15656392">Seth Hunter</a> on <a href="https://vimeo.com">Vimeo</a>.</p>
+<iframe src="//player.vimeo.com/video/116622619" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe> <p><a href="http://vimeo.com/116622619">video on vimeo of digital pupptry prototype testing</a></p>
