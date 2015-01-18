@@ -93,6 +93,7 @@ public:
     bool saveMatrix;
     bool homographyReady, lockHomography;
     ofxXmlSettings points;
+    ofxXmlSettings projXML; 
     cv::Mat homography;
     
     //------------Tracking
@@ -123,6 +124,9 @@ public:
     vector<ofPoint> scalePolyShape(ofPolyline shapeIn);
     bool gravityOn, wallsOn;
     float circleMin, circleMax, circleFreq;
+    void addWalls();
+    void saveProjectorPoint(ofVec2f cur, int index);
+    void writeProjectorPoints(); 
     
 
 };
