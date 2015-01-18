@@ -31,7 +31,7 @@
 #include "ofxCv.h"
 #include "ofxUI.h"
 #include "ofxBox2d.h"
-
+#include "customParticle.h"
 
 class ofApp: public ofBaseApp
 {
@@ -63,6 +63,7 @@ public:
     ofxUISuperCanvas *gui0; 
     ofxUISuperCanvas *gui1;
     ofxUISuperCanvas *gui2;
+    ofxUISuperCanvas *gui3; 
     void guiEvent(ofxUIEventArgs &e);
     int frameCount;
     void refreshGUIs(); 
@@ -111,13 +112,17 @@ public:
     
     //-------------Box2d
     float xOffset; 
-    ofxBox2d                            box2d;
-    vector <shared_ptr<ofxBox2dCircle> >     circles;
+    ofxBox2d                                box2d;
+    vector <shared_ptr<ofxBox2dCircle > >   circles;
     vector <shared_ptr<ofxBox2dPolygon> >	polyShapes;
-    ofPolyline                          shape;
+    vector <shared_ptr<ofxBox2dRect   > >	walls;
+    vector <shared_ptr<CustomParticle > >   customParticles;
+    ofPolyline                              shape;
+    void updateBox2DForces(cv::Point2f centroid);
     void createBox2DShape(ofPolyline &daShape);
     vector<ofPoint> scalePolyShape(ofPolyline shapeIn);
-
+    bool gravityOn, wallsOn;
+    float circleMin, circleMax, circleFreq;
     
 
 };

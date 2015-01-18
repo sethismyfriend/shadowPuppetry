@@ -140,10 +140,9 @@ void ofApp::setup()
     ofDisableAntiAliasing();
     ofSetLogLevel(OF_LOG_NOTICE);
     box2d.init();
-    box2d.setGravity(0, 20);
+    box2d.setGravity(20.0, 0.0);
     box2d.createGround();
     box2d.setFPS(30.0);
-    
    
     //-------UI setup------------
     ofEnableSmoothing();
@@ -187,6 +186,20 @@ void ofApp::setup()
     gui2->autoSizeToFitWidgets();
     ofAddListener(gui2->newGUIEvent,this,&ofApp::guiEvent);  //load settings triggers event updates
     
+    gui3 = new ofxUISuperCanvas("Box2D");
+    gui3->addSpacer();
+    gui3->addToggle("GRAVITY ON", true);
+    gui3->addToggle("WALLS ON", true);
+    gui3->addMinimalSlider("CIRCLE MIN", 0, 200, 2.0);
+    gui3->addMinimalSlider("CIRCLE MAX", 0, 200, 20.0);
+    gui3->addMinimalSlider("CIRCLE FREQ", 0, 50, 20.0);
+    gui3->addLabelButton("ADD CIRCLE", false);
+    gui3->addLabelButton("ADD PARTICLES", false);
+    gui3->addLabelButton("CLEAR SHAPES", false);
+    gui3->autoSizeToFitWidgets();
+    ofAddListener(gui3->newGUIEvent,this,&ofApp::guiEvent);  //load settings triggers event updates
+
+    
     refreshGUIs();
     
 }
@@ -196,6 +209,7 @@ void ofApp::updatePostions() {
         gui0->setPosition(450,camHeight*1.75);
         gui1->setPosition(0, camHeight*1.75);
         gui2->setPosition(210,camHeight*1.75);
+        gui3->setPosition(680,camHeight*1.75);
 }
 
 
@@ -266,28 +280,48 @@ void ofApp::update()
     
    // if(fullScreen) {
         // add some circles every so often
-        if((int)ofRandom(0, 20) == 0) {
+        if((int)ofRandom(0, circleFreq) == 0) {
             shared_ptr<ofxBox2dCircle> circle = shared_ptr<ofxBox2dCircle>(new ofxBox2dCircle);
             circle.get()->setPhysics(0.3, 0.5, 0.1);
-            circle.get()->setup(box2d.getWorld(), xOffset + ((ofGetWidth()-xOffset)/2) + ofRandom(-20, 20), -20, ofRandom(10, 50));
+            circle.get()->setup(box2d.getWorld(), xOffset + ((ofGetWidth()-xOffset)/2) + ofRandom(-20, 20), -20, ofRandom(circleMin, circleMax));
             circles.push_back(circle);
         }
         
         // remove shapes offscreen
         ofRemove(circles, shouldRemove);
-        //ofRemove(polyShapes, shouldRemove);
-        
+        ofRemove(customParticles, shouldRemove);
+    
         polyShapes.clear();
         //RectTracker& tracker = contourFinder.getTracker();   //use to get labels
         for(int i = 0; i < contourFinder.size(); i++) {
             ofPolyline temp = contourFinder.getPolyline(i);
             createBox2DShape(temp);
+            updateBox2DForces(contourFinder.getCentroid(i));
         }
+    
+    
+    
+    
         
         box2d.update();
    // }
     
 }
+
+void ofApp::updateBox2DForces(cv::Point2f centroid) {
+    float strength = 8.0f;
+    float damping  = 0.7f;
+    float minDis   = 100;
+    for(int i=0; i<circles.size(); i++) {
+        circles[i].get()->addAttractionPoint(centroid.x, centroid.y, strength);
+        circles[i].get()->setDamping(damping, damping);
+    }
+    for(int i=0; i<customParticles.size(); i++) {
+        customParticles[i].get()->addAttractionPoint(centroid.x, centroid.y, strength);
+        customParticles[i].get()->setDamping(damping, damping);
+    }
+}
+
 
 void ofApp::refreshGUIs(){
     gui0->loadSettings("PS3_Settings.xml");
@@ -557,6 +591,63 @@ void ofApp::guiEvent(ofxUIEventArgs &e)
     }
     else if (name == "SAVE TRACKING") {
         gui2->saveSettings("Tracking_Settings.xml");
+    }
+    
+    //------------------BOX 2D MODDING -------------------//
+    
+    else if (name == "WALLS ON") {
+        ofxUIToggle *temp = (ofxUIToggle *) e.widget;
+        wallsOn = temp->getValue();
+        if(wallsOn) {
+            
+        } else {
+            
+        }
+    }
+    else if (name == "GRAVITY ON") {
+        ofxUIToggle *temp = (ofxUIToggle *) e.widget;
+        gravityOn = temp->getValue();
+        if(gravityOn) {
+            box2d.setGravity(20.0, 0.0);
+        } else {
+            box2d.setGravity(0.0, 0.0);
+        }
+    }
+    else if (name == "ADD CIRCLE") {
+        float r = ofRandom(4, 20);
+        float x = ofRandom(displayWidth, displayWidth+projectorWidth);
+        float y = ofRandom(0, -100);
+        circles.push_back(shared_ptr<ofxBox2dCircle>(new ofxBox2dCircle));
+        circles.back().get()->setPhysics(3.0, 0.53, 0.1);
+        circles.back().get()->setup(box2d.getWorld(), x, y, r);
+    }
+    else if (name == "CIRCLE MIN") {
+        ofxUISlider *temp = (ofxUISlider *) e.widget;
+        circleMin = temp->getValue();
+    }
+    else if (name == "CIRCLE MAX") {
+        ofxUISlider *temp = (ofxUISlider *) e.widget;
+        circleMax = temp->getValue();
+    }
+    else if (name == "CIRCLE FREQ") {
+        ofxUISlider *temp = (ofxUISlider *) e.widget;
+        circleFreq = temp->getValue();
+    }
+    else if (name == "ADD PARTICLES") {
+        customParticles.push_back(shared_ptr<CustomParticle>(new CustomParticle));
+        CustomParticle * p = customParticles.back().get();
+        float r = ofRandom(3, 20);
+        float x = ofRandom(displayWidth, displayWidth+projectorWidth);
+        float y = ofRandom(0, -100);
+        p->setPhysics(0.4, 0.53, 0.31);
+        p->setup(box2d.getWorld(), x, y, r);
+        p->color.r = ofRandom(20, 100);
+        p->color.g = 0;
+        p->color.b = ofRandom(150, 255);
+    }
+    else if (name == "CLEAR SHAPES") {
+        circles.clear();
+        customParticles.clear();
     }
     
 }
