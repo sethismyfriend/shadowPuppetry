@@ -77,7 +77,6 @@ void ofApp::setup()
     drawProjectorBounds = true;
     applyProjectorHomography = false;
     
-    //TODO: make position of homography relative.
     sX = 0;
     sY = 200;
     ratio = 0.5;
@@ -163,6 +162,9 @@ void ofApp::setup()
     debugPos = ofPoint(10,camHeight+35);
     frameCount = 0;
     
+    //TODO: - pull the develop branch of ofxUI to fix this issue
+    //https://github.com/rezaali/ofxUI/issues/218  discusses the initialization issue.
+    
     gui0 = new ofxUISuperCanvas("PS3 Camera");
     gui0->addSpacer();
     gui0->addMinimalSlider("EXPOSURE", 0.0, 255.0, 150.0);
@@ -222,6 +224,7 @@ void ofApp::addWalls() {
     float wallSize = 30;
     float buffer = 5;
     //top
+    //TODO: fix walls - they are not sized correctly
     walls.push_back(shared_ptr<ofxBox2dRect>(new ofxBox2dRect));
     walls.back().get()->setPhysics(0.0, 0.0, 0.0);
     walls.back().get()->setup(box2d.getWorld(), displayWidth-wallSize, -1*wallSize+buffer, projectorWidth + wallSize*2, wallSize);
