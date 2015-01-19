@@ -197,6 +197,7 @@
 		4524C0ED0C2DD3E085CE3350 /* ObjectFinder.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = ObjectFinder.h; path = ../../../addons/ofxCv/libs/ofxCv/include/ofxCv/ObjectFinder.h; sourceTree = SOURCE_ROOT; };
 		45410DD818BB205166E67E89 /* any.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = any.h; path = ../../../addons/ofxOpenCv/libs/opencv/include/opencv2/flann/any.h; sourceTree = SOURCE_ROOT; };
 		45F38573A0B0DEEC8BBC7A2C /* simplex_downhill.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = simplex_downhill.h; path = ../../../addons/ofxOpenCv/libs/opencv/include/opencv2/flann/simplex_downhill.h; sourceTree = SOURCE_ROOT; };
+		4998D08F1A6B490100AFC918 /* customParticle.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = customParticle.h; sourceTree = "<group>"; };
 		49EFFCF36CF194CCE0E1FAAB /* kdtree_index.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = kdtree_index.h; path = ../../../addons/ofxOpenCv/libs/opencv/include/opencv2/flann/kdtree_index.h; sourceTree = SOURCE_ROOT; };
 		49F7EADB1A4D4FB0004A057F /* libusb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = libusb.h; sourceTree = "<group>"; };
 		49F7EADE1A4D4FB0004A057F /* usb-1.0.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "usb-1.0.a"; sourceTree = "<group>"; };
@@ -1389,6 +1390,7 @@
 				E4B69E1D0A3A1BDC003C02F2 /* main.cpp */,
 				E4B69E1E0A3A1BDC003C02F2 /* ofApp.cpp */,
 				E4B69E1F0A3A1BDC003C02F2 /* ofApp.h */,
+				4998D08F1A6B490100AFC918 /* customParticle.h */,
 			);
 			path = src;
 			sourceTree = SOURCE_ROOT;

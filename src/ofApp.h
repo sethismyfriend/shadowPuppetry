@@ -50,7 +50,7 @@ public:
     //---------homography
     bool movePoint(vector<ofVec2f>& points, ofVec2f point, int LeftOrRight);
     void drawPoints(vector<ofVec2f>& points);
-    void updatePostions();
+    void updateGUIPostions();
     void clearPoints();
     void saveXMLPoints(ofVec2f cur);
     void pushXMLPoint(ofVec2f point, int index, int LorR);

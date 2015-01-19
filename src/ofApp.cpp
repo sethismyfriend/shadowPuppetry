@@ -101,15 +101,7 @@ void ofApp::setup()
         homographyReady = true;
     }
     
-    // load the previous homography if it's available
-    ofFile prevProj("homographyProjector.yml");
-    if(prevProj.exists()) {
-        FileStorage fs2(ofToDataPath("homographyProjector.yml"), FileStorage::READ);
-        fs2["homographyProjector"] >> projectorHomography;
-        applyProjectorHomography = true;
-    }
-    
-    //load the previous draw points if available
+    //load the previous camera homography points
     if(points.loadFile("points.xml")) {
         
         points.pushTag("leftPoints");
@@ -136,7 +128,7 @@ void ofApp::setup()
         
     }
     
-    //load projector points
+    //load the marked corners of the projection.
     if(projXML.loadFile("projectorPoints.xml")) {
         projXML.pushTag("Points");
         int numP = projXML.getNumTags("p");
@@ -168,16 +160,16 @@ void ofApp::setup()
     //-------UI setup------------
     ofEnableSmoothing();
     ofSetCircleResolution(60);
-    debugPos = ofPoint(10,camHeight+15);
+    debugPos = ofPoint(10,camHeight+35);
     frameCount = 0;
     
     gui0 = new ofxUISuperCanvas("PS3 Camera");
     gui0->addSpacer();
-    gui0->addMinimalSlider("EXPOSURE", 0, 255, 150.0);
-    gui0->addMinimalSlider("BRIGHTNESS", 0, 255, 100.0);
-    gui0->addMinimalSlider("GAIN", 0, 63, 50.0);
-    gui0->addMinimalSlider("CONTRAST", 0, 255, 200.0);
-    gui0->addMinimalSlider("SHARPNESS", 0, 255, 0.0);
+    gui0->addMinimalSlider("EXPOSURE", 0.0, 255.0, 150.0);
+    gui0->addMinimalSlider("BRIGHTNESS", 0.0, 255.0, 100.0);
+    gui0->addMinimalSlider("GAIN", 0.0, 63.0, 50.0);
+    gui0->addMinimalSlider("CONTRAST", 0.0, 255.0, 200.0);
+    gui0->addMinimalSlider("SHARPNESS", 0.0, 255.0, 0.0);
     gui0->addLabelButton("SAVE SETTINGS", false);
     gui0->autoSizeToFitWidgets();
     ofAddListener(gui0->newGUIEvent,this,&ofApp::guiEvent);
@@ -198,11 +190,11 @@ void ofApp::setup()
     gui2->addSpacer();
     gui2->addToggle("SHOW/HIDE TRACKING", true);
     gui2->addToggle("INVERT TRACKING", true);
-    gui2->addMinimalSlider("THRESHOLD", 0, 255, 128.0);
-    gui2->addMinimalSlider("MIN AREA RADIUS", 0, 200, 15.0);
-    gui2->addMinimalSlider("MAX AREA RADIUS", 0, 200, 100.0);
-    gui2->addMinimalSlider("PERSISTENCE", 0, 60, 15.0);
-    gui2->addMinimalSlider("MAX DISTANCE", 0, 250, 32.0);
+    gui2->addMinimalSlider("THRESHOLD", 0.0, 255.0, 128.0);
+    gui2->addMinimalSlider("MIN AREA RADIUS", 0.0, 200.0, 15.0);
+    gui2->addMinimalSlider("MAX AREA RADIUS", 0.0, 200.0, 100.0);
+    gui2->addMinimalSlider("PERSISTENCE", 0.0, 60.0, 15.0);
+    gui2->addMinimalSlider("MAX DISTANCE", 0.0, 250.0, 32.0);
     gui2->addLabelButton("SAVE TRACKING", false);
     gui2->autoSizeToFitWidgets();
     ofAddListener(gui2->newGUIEvent,this,&ofApp::guiEvent);  //load settings triggers event updates
@@ -211,9 +203,9 @@ void ofApp::setup()
     gui3->addSpacer();
     gui3->addToggle("GRAVITY ON", true);
     gui3->addToggle("WALLS ON", true);
-    gui3->addMinimalSlider("CIRCLE MIN", 0, 200, 2.0);
-    gui3->addMinimalSlider("CIRCLE MAX", 0, 200, 20.0);
-    gui3->addMinimalSlider("CIRCLE FREQ", 0, 50, 20.0);
+    gui3->addMinimalSlider("CIRCLE MIN", 0.0, 200.0, 2.0);
+    gui3->addMinimalSlider("CIRCLE MAX", 0.0, 200.0, 20.0);
+    gui3->addMinimalSlider("CIRCLE FREQ", 0.0, 50.0, 20.0);
     gui3->addLabelButton("ADD CIRCLE", false);
     gui3->addLabelButton("ADD PARTICLES", false);
     gui3->addLabelButton("CLEAR SHAPES", false);
@@ -227,34 +219,36 @@ void ofApp::setup()
 
 void ofApp::addWalls() {
     //add walls
-    float wallSize = 50;
+    float wallSize = 30;
+    float buffer = 5;
     //top
     walls.push_back(shared_ptr<ofxBox2dRect>(new ofxBox2dRect));
     walls.back().get()->setPhysics(0.0, 0.0, 0.0);
-    walls.back().get()->setup(box2d.getWorld(), displayWidth, -1*wallSize, projectorWidth, wallSize);
+    walls.back().get()->setup(box2d.getWorld(), displayWidth-wallSize, -1*wallSize+buffer, projectorWidth + wallSize*2, wallSize);
     //right
     walls.push_back(shared_ptr<ofxBox2dRect>(new ofxBox2dRect));
     walls.back().get()->setPhysics(0.0, 0.0, 0.0);
-    walls.back().get()->setup(box2d.getWorld(), displayWidth+projectorWidth, -1*wallSize, wallSize, projectorHeight);
+    walls.back().get()->setup(box2d.getWorld(), displayWidth+projectorWidth, -1*wallSize+buffer, wallSize, projectorHeight + wallSize*2);
     //left
     walls.push_back(shared_ptr<ofxBox2dRect>(new ofxBox2dRect));
     walls.back().get()->setPhysics(0.0, 0.0, 0.0);
-    walls.back().get()->setup(box2d.getWorld(), displayWidth-wallSize, -1*wallSize, wallSize, projectorHeight);
+    walls.back().get()->setup(box2d.getWorld(), displayWidth-wallSize+buffer, -1*wallSize+buffer, wallSize, projectorHeight + wallSize*2);
 
 }
 
-void ofApp::updatePostions() {
-        gui0->setPosition(450,camHeight*1.75);
-        gui1->setPosition(0, camHeight*1.75);
-        gui2->setPosition(210,camHeight*1.75);
-        gui3->setPosition(680,camHeight*1.75);
+void ofApp::updateGUIPostions() {
+    float guiPos = camHeight*2.0;
+        gui0->setPosition(450,guiPos);
+        gui1->setPosition(0, guiPos);
+        gui2->setPosition(210,guiPos);
+        gui3->setPosition(680,guiPos);
 }
 
 
 void ofApp::update()
 {
 	//-----------------PS3--------------------------
-    updatePostions();
+    updateGUIPostions();
     vidGrabber.update();
 	if (vidGrabber.isFrameNew())
     {
@@ -346,15 +340,17 @@ void ofApp::updateBox2DForces(cv::Point2f centroid) {
     float strength = 8.0f;
     float damping  = 0.7f;
     float minDis   = 100;
+    float ratioW = projectorWidth/camWidth;
+    float ratioH = projectorHeight/camHeight;
     for(int i=0; i<circles.size(); i++) {
         if(drawProjectorBounds) {
-        circles[i].get()->addAttractionPoint(centroid.x + projectorPoints[0].x, centroid.y + projectorPoints[0].y, strength);
+        circles[i].get()->addAttractionPoint(centroid.x*ratioW + projectorPoints[0].x, centroid.y*ratioH + projectorPoints[0].y, strength);
         circles[i].get()->setDamping(damping, damping);
         }
     }
     for(int i=0; i<customParticles.size(); i++) {
         if(drawProjectorBounds) {
-        customParticles[i].get()->addAttractionPoint(centroid.x + projectorPoints[0].x, centroid.y + projectorPoints[0].y, strength);
+        customParticles[i].get()->addAttractionPoint(centroid.x*ratioW + projectorPoints[0].x, centroid.y*ratioH + projectorPoints[0].y, strength);
         customParticles[i].get()->setDamping(damping, damping);
         }
     }
@@ -365,7 +361,7 @@ void ofApp::refreshGUIs(){
     gui0->loadSettings("PS3_Settings.xml");
     gui1->loadSettings("Homography_Settings.xml");
     gui2->loadSettings("Tracking_Settings.xml");
-    gui3->loadSettings("Projector_Settings.xml");
+    gui3->loadSettings("Box2d_Settings.xml");
 }
 
 
@@ -397,17 +393,19 @@ void ofApp::draw()
         ofDrawLine(leftPoints[i], rightPoints[i]);
     }
     
-    
-    dir << "Directions:" << std::endl;
-    dir << "1) Use the PS3 Camera GUI to adjust your \n video image. Click 'save settings'." << std::endl;
-    dir << "2) Click 4 points on the right image to \n mark the corners of your screen." << std::endl;
-    dir << "3) Adjust the red points on the left by \n clicking and moving." << std::endl;
-    dir << "4) Click 'Save Homography' to save to file." << std::endl;
-    dir << "5) Toggle Fullscreen to perform. \n Try keyboard shortcuts (see left legend)." << std::endl;
-
-    if(showTracker) drawTracker();
     dir << "Total Bodies: " << ofToString(box2d.getBodyCount()) << "\n";
     dir << "Total Joints: " << ofToString(box2d.getJointCount()) << "\n\n";
+    
+    dir << "Directions:" << std::endl;
+    dir << "1) Use the PS3 Camera GUI to adjust your video image. Click 'save settings'." << std::endl;
+    dir << "2) Click 4 points on the right image to mark the corners of your screen." << std::endl;
+    dir << "3) Adjust the red points on the left by clicking and moving." << std::endl;
+    dir << "4) Click 'Save Homography' to save to file." << std::endl;
+    dir << "5) Press 'p' to mark the 4 corners of your projection area (top-left,top-right,bot-right,bot-left)" << std::endl;
+    dir << "6) Use the control panels to adjust tracking parameters, and add physics." << std::endl;
+
+    if(showTracker) drawTracker();
+
     
     //after clicking 4 points in p mode this image should appear corrected.
     //if(applyProjectorHomography) projectorWarp.draw(xOffset, 0, projectorWidth, projectorHeight);
@@ -444,7 +442,7 @@ void ofApp::draw()
     drawProjectorRect(); 
     
     //ofSetColor(0, 0, 0);
-    ofDrawBitmapStringHighlight(dir.str(), debugPos + ofPoint(200,0), 500, 180);
+    ofDrawBitmapStringHighlight(dir.str(), debugPos + ofPoint(0,0));
     
 }
 
@@ -697,7 +695,7 @@ void ofApp::guiEvent(ofxUIEventArgs &e)
         customParticles.clear();
     }
     else if (name == "SAVE BOX2D") {
-        gui3->saveSettings("Projector_Settings.xml");
+        gui3->saveSettings("Box2d_Settings.xml");
     }
     
 }
