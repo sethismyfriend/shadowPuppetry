@@ -228,23 +228,26 @@ void ofApp::addWalls() {
     walls.push_back(shared_ptr<ofxBox2dRect>(new ofxBox2dRect));
     walls.back().get()->setPhysics(0.0, 0.0, 0.0);
     walls.back().get()->setup(box2d.getWorld(), displayWidth-wallSize, -1*wallSize+buffer, projectorWidth + wallSize*2, wallSize);
+    
+    //walls.back().get()->setup(<#b2World *b2dworld#>, <#float x#>, <#float y#>, <#float w#>, <#float h#>)
+    
     //right
     walls.push_back(shared_ptr<ofxBox2dRect>(new ofxBox2dRect));
     walls.back().get()->setPhysics(0.0, 0.0, 0.0);
-    walls.back().get()->setup(box2d.getWorld(), displayWidth+projectorWidth, -1*wallSize+buffer, wallSize, projectorHeight + wallSize*2);
+    walls.back().get()->setup(box2d.getWorld(), displayWidth+projectorWidth*2, -1*wallSize+buffer, wallSize, projectorHeight*2 + wallSize*2);
     //left
     walls.push_back(shared_ptr<ofxBox2dRect>(new ofxBox2dRect));
     walls.back().get()->setPhysics(0.0, 0.0, 0.0);
-    walls.back().get()->setup(box2d.getWorld(), displayWidth-wallSize+buffer, -1*wallSize+buffer, wallSize, projectorHeight + wallSize*2);
+    walls.back().get()->setup(box2d.getWorld(), displayWidth-wallSize+buffer, -1*wallSize+buffer, wallSize, projectorHeight*2 + wallSize*2);
 
 }
 
 void ofApp::updateGUIPostions() {
     float guiPos = camHeight*2.0;
-        gui0->setPosition(450,guiPos);
+        gui0->setPosition(470,guiPos);
         gui1->setPosition(0, guiPos);
-        gui2->setPosition(210,guiPos);
-        gui3->setPosition(680,guiPos);
+        gui2->setPosition(220,guiPos);
+        gui3->setPosition(710,guiPos);
 }
 
 
@@ -421,6 +424,8 @@ void ofApp::draw()
         ofFill();
         ofSetHexColor(0xc0dd3b);
         walls[i].get()->draw();
+        
+        //ofDrawRectangle(displayWidth-200, 0, 30, 768);
     }
     
     // circles

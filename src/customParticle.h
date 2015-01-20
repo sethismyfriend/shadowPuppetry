@@ -25,7 +25,7 @@ public:
         
         ofSetColor(color.r, color.g, color.b);
         ofFill();
-        ofCircle(0, 0, radius);	
+        ofDrawCircle(0, 0, radius);
         
         glPopMatrix();
         
