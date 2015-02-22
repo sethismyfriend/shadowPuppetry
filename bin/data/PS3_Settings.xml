@@ -2,31 +2,31 @@
     <Kind>40</Kind>
     <Name>OFX_UI_WIDGET_CANVAS</Name>
     <IsMinified>0</IsMinified>
-    <XPosition>450.000000000</XPosition>
-    <YPosition>420.000000000</YPosition>
+    <XPosition>470.000000000</XPosition>
+    <YPosition>480.000000000</YPosition>
 </Canvas>
 <Widget>
     <Kind>25</Kind>
     <Name>EXPOSURE</Name>
-    <Value>37.684730530</Value>
+    <Value>159.532028198</Value>
 </Widget>
 <Widget>
     <Kind>25</Kind>
     <Name>BRIGHTNESS</Name>
-    <Value>31.403942108</Value>
+    <Value>72.857147217</Value>
 </Widget>
 <Widget>
     <Kind>25</Kind>
     <Name>GAIN</Name>
-    <Value>22.655172348</Value>
+    <Value>23.275863647</Value>
 </Widget>
 <Widget>
     <Kind>25</Kind>
     <Name>CONTRAST</Name>
-    <Value>38.940887451</Value>
+    <Value>31.403942108</Value>
 </Widget>
 <Widget>
     <Kind>25</Kind>
     <Name>SHARPNESS</Name>
-    <Value>57.783252716</Value>
+    <Value>41.453201294</Value>
 </Widget>

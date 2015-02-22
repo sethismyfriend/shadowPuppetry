@@ -2,8 +2,8 @@
     <Kind>40</Kind>
     <Name>OFX_UI_WIDGET_CANVAS</Name>
     <IsMinified>0</IsMinified>
-    <XPosition>210.000000000</XPosition>
-    <YPosition>420.000000000</YPosition>
+    <XPosition>220.000000000</XPosition>
+    <YPosition>480.000000000</YPosition>
 </Canvas>
 <Widget>
     <Kind>2</Kind>
@@ -28,15 +28,15 @@
 <Widget>
     <Kind>25</Kind>
     <Name>MAX AREA RADIUS</Name>
-    <Value>63.054187775</Value>
+    <Value>35.467979431</Value>
 </Widget>
 <Widget>
     <Kind>25</Kind>
     <Name>PERSISTENCE</Name>
-    <Value>30.147783279</Value>
+    <Value>48.472908020</Value>
 </Widget>
 <Widget>
     <Kind>25</Kind>
     <Name>MAX DISTANCE</Name>
-    <Value>45.566501617</Value>
+    <Value>177.339889526</Value>
 </Widget>

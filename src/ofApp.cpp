@@ -215,7 +215,9 @@ void ofApp::setup()
     gui3->autoSizeToFitWidgets();
     ofAddListener(gui3->newGUIEvent,this,&ofApp::guiEvent);  //load settings triggers event updates
 
-    refreshGUIs();
+    //refreshGUIs();
+    //ofShowCursor();
+
     
 }
 
@@ -224,21 +226,19 @@ void ofApp::addWalls() {
     float wallSize = 30;
     float buffer = 5;
     //top
-    //TODO: fix walls - they are not sized correctly
+    //TODO: fix walls - why are the walls
     walls.push_back(shared_ptr<ofxBox2dRect>(new ofxBox2dRect));
     walls.back().get()->setPhysics(0.0, 0.0, 0.0);
     walls.back().get()->setup(box2d.getWorld(), displayWidth-wallSize, -1*wallSize+buffer, projectorWidth + wallSize*2, wallSize);
     
-    //walls.back().get()->setup(<#b2World *b2dworld#>, <#float x#>, <#float y#>, <#float w#>, <#float h#>)
-    
     //right
     walls.push_back(shared_ptr<ofxBox2dRect>(new ofxBox2dRect));
     walls.back().get()->setPhysics(0.0, 0.0, 0.0);
-    walls.back().get()->setup(box2d.getWorld(), displayWidth+projectorWidth*2, -1*wallSize+buffer, wallSize, projectorHeight*2 + wallSize*2);
+    walls.back().get()->setup(box2d.getWorld(), displayWidth+projectorWidth*2, projectorHeight/2, wallSize, projectorHeight + wallSize*2);
     //left
     walls.push_back(shared_ptr<ofxBox2dRect>(new ofxBox2dRect));
     walls.back().get()->setPhysics(0.0, 0.0, 0.0);
-    walls.back().get()->setup(box2d.getWorld(), displayWidth-wallSize+buffer, -1*wallSize+buffer, wallSize, projectorHeight*2 + wallSize*2);
+    walls.back().get()->setup(box2d.getWorld(), displayWidth-wallSize+buffer, projectorHeight/2, wallSize, projectorHeight + wallSize*2);
 
 }
 
@@ -253,7 +253,9 @@ void ofApp::updateGUIPostions() {
 
 void ofApp::update()
 {
-	//-----------------PS3--------------------------
+
+    
+    //-----------------PS3--------------------------
     updateGUIPostions();
     vidGrabber.update();
 	if (vidGrabber.isFrameNew())
@@ -373,14 +375,19 @@ void ofApp::refreshGUIs(){
 
 void ofApp::draw()
 {
+    ofHideCursor();
+    ofShowCursor();
+    
+    
     std::stringstream dir;
     ofBackground(0);
     ofSetColor(255);
     ofSetFrameRate(120);
-    ofShowCursor();
+   //
     
     dir << "App FPS: " << ofGetFrameRate() << std::endl;
     dir << "Cam FPS: " << vidGrabber.getFPS() << std::endl;
+    
     
     videoTexture.draw(camWidth, 0, camWidth, camHeight);
     if(homographyReady) {
@@ -448,9 +455,11 @@ void ofApp::draw()
     
 
     drawProjectorRect(); 
+     
     
     //ofSetColor(0, 0, 0);
     ofDrawBitmapStringHighlight(dir.str(), debugPos + ofPoint(0,0));
+     
     
 }
 
